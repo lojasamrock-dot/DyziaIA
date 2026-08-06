@@ -56,38 +56,249 @@ CAMPOS_MEDIDAS = [
 
 
 # ----------------------------------------------------------------------------
-# CSS - cards, gauges visuais
+# CSS - identidade visual premium (cabeçalhos centralizados, cards, tabs)
 # ----------------------------------------------------------------------------
 
 def injetar_css():
     st.markdown(
         """
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        html, body, [class*="css"]  { font-family: 'Inter', sans-serif; }
+
+        /* Fundo geral com leve gradiente radial para dar profundidade */
+        .stApp {
+            background:
+                radial-gradient(circle at 15% 0%, rgba(31,111,235,0.10) 0%, rgba(11,15,25,0) 45%),
+                radial-gradient(circle at 85% 0%, rgba(31,111,235,0.06) 0%, rgba(11,15,25,0) 40%),
+                #0B0F19;
+        }
+
+        /* Esconde o menu hambúrguer / rodapé padrão do Streamlit para visual mais limpo */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+
+        /* ---------- Cabeçalho de página / seção, sempre centralizado ---------- */
+        .header-wrap {
+            text-align: center;
+            padding: 6px 0 22px 0;
+            margin-bottom: 18px;
+            border-bottom: 1px solid rgba(31,42,68,0.7);
+        }
+        .header-eyebrow {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: #7FA8F5;
+            background: rgba(31,111,235,0.12);
+            border: 1px solid rgba(31,111,235,0.35);
+            border-radius: 999px;
+            padding: 4px 14px;
+            margin-bottom: 10px;
+        }
+        .header-title {
+            font-size: 2.1rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #F3F6FC;
+            margin: 4px 0 6px 0;
+        }
+        .header-subtitle {
+            font-size: 0.98rem;
+            color: #93A2C2;
+            font-weight: 400;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        /* Cabeçalho principal (hero) da tela de login */
+        .hero-wrap {
+            text-align: center;
+            padding: 34px 20px 26px 20px;
+            margin-bottom: 8px;
+        }
+        .hero-logo {
+            font-size: 2.6rem;
+            margin-bottom: 4px;
+        }
+        .hero-title {
+            font-size: 2.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(90deg, #E5E7EB, #7FA8F5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 8px 0;
+        }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: #93A2C2;
+            max-width: 560px;
+            margin: 0 auto 6px auto;
+        }
+        .hero-badge {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: #0B0F19;
+            background: linear-gradient(90deg, #1F6FEB, #7FA8F5);
+            border-radius: 999px;
+            padding: 6px 16px;
+        }
+
+        /* ---------- Cards de índices ---------- */
         .card {
-            background: linear-gradient(145deg, #111827, #0B0F19);
+            background: linear-gradient(160deg, #131A2C 0%, #0D111C 100%);
             border: 1px solid #1F2A44;
-            border-radius: 14px;
+            border-radius: 16px;
             padding: 18px 20px;
             margin-bottom: 14px;
-            box-shadow: 0 0 18px rgba(31,111,235,0.08);
+            box-shadow: 0 4px 22px rgba(0,0,0,0.25);
+            transition: border-color .15s ease;
         }
-        .card h4 { margin: 0 0 6px 0; color: #9CB4E8; font-size: 0.85rem;
-                    text-transform: uppercase; letter-spacing: .05em;}
-        .card .valor { font-size: 1.6rem; font-weight: 700; color: #E5E7EB; }
-        .badge-verde {color:#22C55E; font-weight:600;}
-        .badge-amarelo {color:#EAB308; font-weight:600;}
-        .badge-laranja {color:#F97316; font-weight:600;}
-        .badge-vermelho {color:#EF4444; font-weight:600;}
+        .card:hover { border-color: #1F6FEB; }
+        .card h4 {
+            margin: 0 0 8px 0; color: #8DA3D0; font-size: 0.72rem;
+            text-transform: uppercase; letter-spacing: .09em; font-weight: 600;
+        }
+        .card .valor { font-size: 1.75rem; font-weight: 800; color: #F3F6FC; line-height: 1.1; }
+        .card .valor .unidade { font-size: 0.95rem; font-weight: 500; color: #8DA3D0; margin-left: 3px; }
+
+        /* ---------- Bloco de conteúdo (envolve seções, tipo "painel") ---------- */
+        .panel {
+            background: rgba(17,24,39,0.55);
+            border: 1px solid #1F2A44;
+            border-radius: 18px;
+            padding: 24px 26px;
+            margin-bottom: 18px;
+        }
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #F3F6FC;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ---------- Linhas de leitura IA (grupo muscular) ---------- */
+        .grupo-linha {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(31,42,68,0.6);
+            margin-bottom: 8px;
+        }
+        .grupo-nome { color: #C7D2E8; font-weight: 500; font-size: 0.92rem; }
+        .grupo-status { font-weight: 700; font-size: 0.88rem; }
+        .st-excelente { color: #22C55E; }
+        .st-bom { color: #EAB308; }
+        .st-regular { color: #F97316; }
+        .st-melhorar { color: #EF4444; }
+
+        .legenda-cores {
+            display: flex; justify-content: center; gap: 22px; flex-wrap: wrap;
+            font-size: 0.85rem; color: #93A2C2; margin-top: 10px;
+        }
+
+        /* ---------- Tabs premium ---------- */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 4px;
+            border-bottom: 1px solid #1F2A44;
+            justify-content: center;
+        }
+        .stTabs [data-baseweb="tab"] {
+            height: 42px;
+            border-radius: 10px 10px 0 0;
+            color: #93A2C2;
+            font-weight: 600;
+            font-size: 0.92rem;
+            padding: 0 18px;
+        }
+        .stTabs [aria-selected="true"] {
+            color: #F3F6FC !important;
+            background: rgba(31,111,235,0.12) !important;
+            border-bottom: 2px solid #1F6FEB !important;
+        }
+
+        /* ---------- Botões ---------- */
+        .stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {
+            border-radius: 10px;
+            font-weight: 600;
+            border: 1px solid #1F6FEB;
+        }
+        .stButton > button[kind="primary"], .stFormSubmitButton > button {
+            background: linear-gradient(90deg, #1F6FEB, #1257C4);
+        }
+
+        /* ---------- Sidebar ---------- */
+        section[data-testid="stSidebar"] {
+            background: #0D111C;
+            border-right: 1px solid #1F2A44;
+        }
+        .sidebar-card {
+            text-align: center;
+            padding: 18px 10px 20px 10px;
+            border-bottom: 1px solid #1F2A44;
+            margin-bottom: 16px;
+        }
+        .sidebar-avatar {
+            width: 58px; height: 58px; border-radius: 50%;
+            background: linear-gradient(135deg, #1F6FEB, #7FA8F5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; font-weight: 800; color: #0B0F19;
+            margin: 0 auto 10px auto;
+        }
+        .sidebar-name { font-weight: 700; color: #F3F6FC; font-size: 1rem; }
+        .sidebar-user { color: #7FA8F5; font-size: 0.82rem; }
+
+        /* ---------- Tabelas / dataframes ---------- */
+        [data-testid="stDataFrame"], .stTable {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #1F2A44;
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
 
+def cabecalho(titulo, subtitulo="", eyebrow=""):
+    """Cabeçalho de seção, sempre centralizado — usar no topo de cada aba."""
+    eyebrow_html = f'<div class="header-eyebrow">{eyebrow}</div>' if eyebrow else ""
+    subtitulo_html = f'<div class="header-subtitle">{subtitulo}</div>' if subtitulo else ""
+    st.markdown(
+        f"""
+        <div class="header-wrap">
+            {eyebrow_html}
+            <div class="header-title">{titulo}</div>
+            {subtitulo_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def abrir_painel(titulo=""):
+    if titulo:
+        st.markdown(f'<div class="panel-title">{titulo}</div>', unsafe_allow_html=True)
+
+
 def card(titulo, valor, sufixo=""):
     st.markdown(
         f'<div class="card"><h4>{titulo}</h4>'
-        f'<div class="valor">{valor}{sufixo}</div></div>',
+        f'<div class="valor">{valor}<span class="unidade">{sufixo}</span></div></div>',
         unsafe_allow_html=True,
     )
 
@@ -97,51 +308,71 @@ def card(titulo, valor, sufixo=""):
 # ----------------------------------------------------------------------------
 
 def tela_login():
-    st.title("💪 Perfil Físico Corporal IA — Premium")
-    st.caption("Seu personal trainer digital: medidas, índices, IA e evolução em um só lugar.")
+    injetar_css()
 
-    aba_login, aba_cadastro = st.tabs(["Entrar", "Criar conta"])
+    st.markdown(
+        """
+        <div class="hero-wrap">
+            <div class="hero-logo">💪</div>
+            <div class="hero-title">Perfil Físico Corporal IA</div>
+            <div class="hero-subtitle">
+                Seu personal trainer digital: medidas, índices automáticos, leitura por IA,
+                radar corporal e evolução completa em um único lugar.
+            </div>
+            <div class="hero-badge">Premium · v1.0</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with aba_login:
-        with st.form("form_login"):
-            username = st.text_input("Usuário")
-            senha = st.text_input("Senha", type="password")
-            enviar = st.form_submit_button("Entrar", use_container_width=True)
-            if enviar:
-                usuario = db.autenticar(username, senha)
-                if usuario:
-                    st.session_state["usuario"] = usuario
-                    st.rerun()
-                else:
-                    st.error("Usuário ou senha inválidos.")
+    _, col_centro, _ = st.columns([1, 1.3, 1])
+    with col_centro:
+        aba_login, aba_cadastro = st.tabs(["Entrar", "Criar conta"])
 
-    with aba_cadastro:
-        with st.form("form_cadastro"):
-            c1, c2 = st.columns(2)
-            with c1:
-                novo_username = st.text_input("Usuário (login)")
-                nova_senha = st.text_input("Senha", type="password")
-                nome = st.text_input("Nome completo")
-                idade = st.number_input("Idade", min_value=10, max_value=100, value=25)
-            with c2:
-                sexo = st.selectbox("Sexo (para as fórmulas de composição corporal)", ["M", "F"])
-                altura_cm = st.number_input("Altura (cm)", min_value=100.0, max_value=230.0, value=175.0)
-                tempo_treino = st.number_input("Tempo de treino (meses)", min_value=0, max_value=600, value=12)
-                natural = st.selectbox("Natural ou hormonizado", ["Natural", "Hormonizado"])
-            objetivo = st.text_input("Objetivo (ex: hipertrofia, definição, saúde geral)")
-            criar = st.form_submit_button("Criar conta", use_container_width=True)
-            if criar:
-                if not novo_username or not nova_senha or not nome:
-                    st.error("Preencha usuário, senha e nome.")
-                else:
-                    try:
-                        db.criar_usuario(
-                            novo_username, nova_senha, nome, int(idade), sexo,
-                            float(altura_cm), int(tempo_treino), natural, objetivo,
-                        )
-                        st.success("Conta criada! Vá para a aba 'Entrar'.")
-                    except Exception as e:
-                        st.error(f"Não foi possível criar a conta: {e}")
+        with aba_login:
+            st.markdown('<div class="panel">', unsafe_allow_html=True)
+            with st.form("form_login"):
+                username = st.text_input("Usuário")
+                senha = st.text_input("Senha", type="password")
+                enviar = st.form_submit_button("Entrar", use_container_width=True)
+                if enviar:
+                    usuario = db.autenticar(username, senha)
+                    if usuario:
+                        st.session_state["usuario"] = usuario
+                        st.rerun()
+                    else:
+                        st.error("Usuário ou senha inválidos.")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with aba_cadastro:
+            st.markdown('<div class="panel">', unsafe_allow_html=True)
+            with st.form("form_cadastro"):
+                c1, c2 = st.columns(2)
+                with c1:
+                    novo_username = st.text_input("Usuário (login)")
+                    nova_senha = st.text_input("Senha", type="password")
+                    nome = st.text_input("Nome completo")
+                    idade = st.number_input("Idade", min_value=10, max_value=100, value=25)
+                with c2:
+                    sexo = st.selectbox("Sexo (para as fórmulas de composição corporal)", ["M", "F"])
+                    altura_cm = st.number_input("Altura (cm)", min_value=100.0, max_value=230.0, value=175.0)
+                    tempo_treino = st.number_input("Tempo de treino (meses)", min_value=0, max_value=600, value=12)
+                    natural = st.selectbox("Natural ou hormonizado", ["Natural", "Hormonizado"])
+                objetivo = st.text_input("Objetivo (ex: hipertrofia, definição, saúde geral)")
+                criar = st.form_submit_button("Criar conta", use_container_width=True)
+                if criar:
+                    if not novo_username or not nova_senha or not nome:
+                        st.error("Preencha usuário, senha e nome.")
+                    else:
+                        try:
+                            db.criar_usuario(
+                                novo_username, nova_senha, nome, int(idade), sexo,
+                                float(altura_cm), int(tempo_treino), natural, objetivo,
+                            )
+                            st.success("Conta criada! Vá para a aba 'Entrar'.")
+                        except Exception as e:
+                            st.error(f"Não foi possível criar a conta: {e}")
+            st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
@@ -149,8 +380,13 @@ def tela_login():
 # ----------------------------------------------------------------------------
 
 def secao_nova_avaliacao(usuario):
-    st.subheader("📏 Nova Avaliação — Medidas Corporais")
+    cabecalho(
+        "Nova Avaliação",
+        "Registre as medidas corporais atuais para gerar índices, leitura por IA e radar.",
+        eyebrow="📏 Medidas Corporais",
+    )
 
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
     with st.form("form_medidas"):
         cols = st.columns(3)
         valores = {}
@@ -159,6 +395,7 @@ def secao_nova_avaliacao(usuario):
                 valores[campo] = st.number_input(rotulo, min_value=0.0, max_value=250.0,
                                                    value=0.0, step=0.1, key=f"med_{campo}")
         salvar = st.form_submit_button("Calcular e Salvar Avaliação", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if salvar:
         faltando = [rotulo for campo, rotulo in CAMPOS_MEDIDAS if valores[campo] == 0.0]
@@ -249,7 +486,11 @@ def secao_dashboard(usuario):
     st.session_state["_medidas_atual"] = medidas
     st.session_state["_avaliacao_atual"] = avaliacao
 
-    st.subheader(f"📊 Dashboard — avaliação de {avaliacao['data_avaliacao'][:10]}")
+    cabecalho(
+        "Dashboard",
+        f"Avaliação registrada em {avaliacao['data_avaliacao'][:10]} — visão completa de índices e leitura por IA.",
+        eyebrow="📊 Resultados",
+    )
 
     # Cards de índices principais
     c1, c2, c3, c4, c5 = st.columns(5)
@@ -264,33 +505,53 @@ def secao_dashboard(usuario):
     with c7: card("Cintura/Altura", f'{indices["razao_cintura_altura"]:.2f}')
     with c8: card("Simetria", f'{indices["simetria_pct"]:.1f}', "%")
 
-    st.divider()
-
+    st.write("")
     col_esq, col_dir = st.columns([1, 1])
 
+    ROTULO_CLASSE = {
+        "Excelente": "st-excelente", "Muito Bom": "st-excelente",
+        "Bom": "st-bom", "Regular": "st-regular",
+        "Necessita prioridade": "st-melhorar", "Não avaliado": "st-regular",
+    }
+
     with col_esq:
-        st.markdown("#### 🧠 Leitura do Perfil Corporal (IA)")
-        st.write(f'**Estrutura óssea:** {leitura["estrutura_ossea"]}')
-        st.write(f'**Nível muscular:** {leitura["nivel_muscular"]}')
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        abrir_painel("🧠 Leitura do Perfil Corporal (IA)")
+
+        m1, m2 = st.columns(2)
+        with m1: card("Estrutura óssea", leitura["estrutura_ossea"])
+        with m2: card("Nível muscular", leitura["nivel_muscular"])
+
         for grupo, info in leitura["grupos"].items():
-            st.write(f'{info["cor"]} **{grupo}:** {info["rotulo"]}')
-        st.write(f'**Estimativa de gordura:** {leitura["estimativa_gordura"]:.1f}%')
-        st.write(f'**Nota Geral:** {leitura["nota_geral"]:.1f} / 10')
+            classe = ROTULO_CLASSE.get(info["rotulo"], "st-regular")
+            st.markdown(
+                f'<div class="grupo-linha">'
+                f'<span class="grupo-nome">{grupo}</span>'
+                f'<span class="grupo-status {classe}">{info["cor"]} {info["rotulo"]}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
         if leitura["prioridade_treino"]:
             st.warning(f'🎯 Prioridade de treino sugerida: **{leitura["prioridade_treino"]}**')
 
-        st.markdown("##### Legenda de cores")
         st.markdown(
-            "🟢 Excelente &nbsp;&nbsp; 🟡 Bom &nbsp;&nbsp; 🟠 Regular &nbsp;&nbsp; 🔴 Necessita melhorar"
+            '<div class="legenda-cores">'
+            '<span>🟢 Excelente</span><span>🟡 Bom</span>'
+            '<span>🟠 Regular</span><span>🔴 Necessita melhorar</span>'
+            '</div>',
+            unsafe_allow_html=True,
         )
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col_dir:
-        st.markdown("#### 🕸️ Radar Corporal")
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        abrir_painel("🕸️ Radar Corporal")
         st.plotly_chart(montar_radar(leitura, indices), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.divider()
-    st.markdown("#### ⏱️ Medidores")
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    abrir_painel("⏱️ Medidores")
     g1, g2, g3 = st.columns(3)
     with g1:
         st.plotly_chart(montar_gauge("Índice Estético", indices["indice_estetico"], 0, 10), use_container_width=True)
@@ -298,6 +559,7 @@ def secao_dashboard(usuario):
         st.plotly_chart(montar_gauge("Índice de Hipertrofia", indices["indice_hipertrofia"], 0, 10), use_container_width=True)
     with g3:
         st.plotly_chart(montar_gauge("Índice de Definição", indices["indice_definicao"], 0, 10), use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
@@ -305,13 +567,20 @@ def secao_dashboard(usuario):
 # ----------------------------------------------------------------------------
 
 def secao_evolucao(usuario):
-    st.subheader("📈 Evolução")
+    cabecalho(
+        "Evolução",
+        "Acompanhe a variação das suas medidas e índices ao longo do tempo.",
+        eyebrow="📈 Histórico",
+    )
+
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
     periodo = st.selectbox("Período", ["Hoje", "30 dias", "90 dias", "180 dias", "1 ano", "Tudo"])
     mapa_dias = {"Hoje": 1, "30 dias": 30, "90 dias": 90, "180 dias": 180, "1 ano": 365, "Tudo": None}
     avaliacoes = db.listar_avaliacoes(usuario["id"], dias=mapa_dias[periodo])
 
     if not avaliacoes:
         st.info("Sem avaliações no período selecionado.")
+        st.markdown('</div>', unsafe_allow_html=True)
         return
 
     df = pd.DataFrame(avaliacoes)
@@ -333,8 +602,10 @@ def secao_evolucao(usuario):
             legend=dict(orientation="h"), height=450, margin=dict(l=20, r=20, t=30, b=20),
         )
         st.plotly_chart(fig, use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("#### Histórico completo")
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    abrir_painel("Histórico completo")
     st.dataframe(df.drop(columns=["usuario_id"]), use_container_width=True)
 
     # Exportação Excel
@@ -346,6 +617,7 @@ def secao_evolucao(usuario):
         file_name=f"evolucao_{usuario['username']}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
@@ -353,12 +625,18 @@ def secao_evolucao(usuario):
 # ----------------------------------------------------------------------------
 
 def secao_fotos(usuario):
-    st.subheader("📸 Fotos — Antes / Depois")
+    cabecalho(
+        "Fotos — Antes / Depois",
+        "Registre fotos de acompanhamento e veja o resumo automático da evolução.",
+        eyebrow="📸 Registro Visual",
+    )
+
     avaliacao = db.ultima_avaliacao(usuario["id"])
     if not avaliacao:
         st.info("Salve uma avaliação antes de anexar fotos.")
         return
 
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         foto_antes = st.file_uploader("Foto 'Antes'", type=["jpg", "jpeg", "png"], key="foto_antes")
@@ -381,10 +659,12 @@ def secao_fotos(usuario):
                         f.write(arquivo.getbuffer())
                     db.salvar_foto(avaliacao["id"], tipo, caminho)
             st.success("Fotos salvas.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Comparação automática (heurística baseada nas medidas salvas, não em
     # visão computacional real — compara a avaliação atual com a anterior)
-    st.markdown("#### 🔍 Comparação automática (baseada nas medidas)")
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    abrir_painel("🔍 Comparação automática (baseada nas medidas)")
     avaliacoes = db.listar_avaliacoes(usuario["id"])
     if len(avaliacoes) >= 2:
         anterior, atual = avaliacoes[-2], avaliacoes[-1]
@@ -411,6 +691,7 @@ def secao_fotos(usuario):
         )
     else:
         st.info("Salve pelo menos duas avaliações para ver a comparação automática.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
@@ -418,13 +699,18 @@ def secao_fotos(usuario):
 # ----------------------------------------------------------------------------
 
 def secao_metas(usuario):
-    st.subheader("🎯 Sistema Inteligente de Metas")
+    cabecalho(
+        "Sistema Inteligente de Metas",
+        "Defina metas de medidas e peso — o sistema estima o prazo com base em taxas de progresso realistas.",
+        eyebrow="🎯 Metas",
+    )
     avaliacao = db.ultima_avaliacao(usuario["id"])
     if not avaliacao:
         st.info("Salve uma avaliação para definir metas.")
         return
 
     campos_meta = [("peso_kg", "Peso (kg)")] + CAMPOS_MEDIDAS[1:]  # inclui peso + medidas
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
     with st.form("form_metas"):
         selecionados = st.multiselect(
             "Quais medidas você quer definir metas?",
@@ -440,6 +726,7 @@ def secao_metas(usuario):
                 value=float(atual), key=f"meta_{campo}",
             )
         salvar_metas = st.form_submit_button("Salvar metas e calcular prazo")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if salvar_metas and selecionados:
         db.limpar_metas(usuario["id"])
@@ -466,11 +753,14 @@ def secao_metas(usuario):
                 "Meta": f'{p["valor_meta"]:.1f}',
                 "Prazo estimado": f'{p["prazo_meses"]} meses' if p["prazo_meses"] else "-",
             })
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        abrir_painel("📋 Plano de metas")
         st.table(pd.DataFrame(dados_tabela))
 
         prazo_total = metas_mod.prazo_geral(plano)
         if prazo_total:
             st.info(f"⏳ Tempo estimado para atingir todas as metas: **{prazo_total} meses**")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
@@ -478,7 +768,11 @@ def secao_metas(usuario):
 # ----------------------------------------------------------------------------
 
 def secao_relatorio(usuario):
-    st.subheader("📄 Relatório Premium (PDF)")
+    cabecalho(
+        "Relatório Premium",
+        "Gere um PDF completo com medidas, índices, leitura por IA e plano de metas.",
+        eyebrow="📄 Exportação",
+    )
     if "_avaliacao_atual" not in st.session_state:
         st.info("Abra a aba 'Dashboard' primeiro para carregar a avaliação mais recente.")
         return
@@ -498,17 +792,21 @@ def secao_relatorio(usuario):
             "(pip install -U kaleido). O relatório será gerado sem o gráfico."
         )
 
-    if st.button("Gerar Relatório PDF", use_container_width=True):
-        pdf_bytes = gerar_relatorio_pdf(
-            usuario=usuario, medidas=medidas, indices=indices,
-            leitura_ia=leitura, plano_metas=plano_metas,
-            grafico_radar_png=radar_png,
-        )
-        st.download_button(
-            "⬇️ Baixar PDF", data=pdf_bytes,
-            file_name=f"relatorio_{usuario['username']}_{datetime.now().strftime('%Y%m%d')}.pdf",
-            mime="application/pdf", use_container_width=True,
-        )
+    _, col_centro, _ = st.columns([1, 1.2, 1])
+    with col_centro:
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        if st.button("Gerar Relatório PDF", use_container_width=True):
+            pdf_bytes = gerar_relatorio_pdf(
+                usuario=usuario, medidas=medidas, indices=indices,
+                leitura_ia=leitura, plano_metas=plano_metas,
+                grafico_radar_png=radar_png,
+            )
+            st.download_button(
+                "⬇️ Baixar PDF", data=pdf_bytes,
+                file_name=f"relatorio_{usuario['username']}_{datetime.now().strftime('%Y%m%d')}.pdf",
+                mime="application/pdf", use_container_width=True,
+            )
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
@@ -516,29 +814,37 @@ def secao_relatorio(usuario):
 # ----------------------------------------------------------------------------
 
 def secao_dados_pessoais(usuario):
-    st.subheader("🙋 Dados Pessoais")
-    with st.form("form_dados_pessoais"):
-        c1, c2 = st.columns(2)
-        with c1:
-            nome = st.text_input("Nome", value=usuario["nome"])
-            idade = st.number_input("Idade", value=usuario["idade"], min_value=10, max_value=100)
-            sexo = st.selectbox("Sexo", ["M", "F"], index=0 if usuario["sexo"] == "M" else 1)
-            altura_cm = st.number_input("Altura (cm)", value=float(usuario["altura_cm"]))
-        with c2:
-            tempo_treino = st.number_input("Tempo de treino (meses)", value=usuario["tempo_treino_meses"], min_value=0)
-            natural = st.selectbox("Natural ou hormonizado", ["Natural", "Hormonizado"],
-                                    index=0 if usuario["natural_hormonizado"] == "Natural" else 1)
-            objetivo = st.text_input("Objetivo", value=usuario["objetivo"] or "")
-        atualizar = st.form_submit_button("Salvar alterações")
-        if atualizar:
-            db.atualizar_usuario(
-                usuario["id"], nome=nome, idade=int(idade), sexo=sexo,
-                altura_cm=float(altura_cm), tempo_treino_meses=int(tempo_treino),
-                natural_hormonizado=natural, objetivo=objetivo,
-            )
-            st.session_state["usuario"] = db.get_usuario(usuario["id"])
-            st.success("Dados atualizados.")
-            st.rerun()
+    cabecalho(
+        "Dados Pessoais",
+        "Essas informações alimentam as fórmulas de composição corporal e a leitura por IA.",
+        eyebrow="🙋 Perfil",
+    )
+    _, col_centro, _ = st.columns([1, 1.4, 1])
+    with col_centro:
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        with st.form("form_dados_pessoais"):
+            c1, c2 = st.columns(2)
+            with c1:
+                nome = st.text_input("Nome", value=usuario["nome"])
+                idade = st.number_input("Idade", value=usuario["idade"], min_value=10, max_value=100)
+                sexo = st.selectbox("Sexo", ["M", "F"], index=0 if usuario["sexo"] == "M" else 1)
+                altura_cm = st.number_input("Altura (cm)", value=float(usuario["altura_cm"]))
+            with c2:
+                tempo_treino = st.number_input("Tempo de treino (meses)", value=usuario["tempo_treino_meses"], min_value=0)
+                natural = st.selectbox("Natural ou hormonizado", ["Natural", "Hormonizado"],
+                                        index=0 if usuario["natural_hormonizado"] == "Natural" else 1)
+                objetivo = st.text_input("Objetivo", value=usuario["objetivo"] or "")
+            atualizar = st.form_submit_button("Salvar alterações", use_container_width=True)
+            if atualizar:
+                db.atualizar_usuario(
+                    usuario["id"], nome=nome, idade=int(idade), sexo=sexo,
+                    altura_cm=float(altura_cm), tempo_treino_meses=int(tempo_treino),
+                    natural_hormonizado=natural, objetivo=objetivo,
+                )
+                st.session_state["usuario"] = db.get_usuario(usuario["id"])
+                st.success("Dados atualizados.")
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------------
@@ -549,9 +855,18 @@ def app_principal():
     usuario = st.session_state["usuario"]
     injetar_css()
 
+    inicial = (usuario["nome"] or "?").strip()[0].upper()
     with st.sidebar:
-        st.markdown(f"### 👤 {usuario['nome']}")
-        st.caption(f"@{usuario['username']}")
+        st.markdown(
+            f"""
+            <div class="sidebar-card">
+                <div class="sidebar-avatar">{inicial}</div>
+                <div class="sidebar-name">{usuario['nome']}</div>
+                <div class="sidebar-user">@{usuario['username']}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         if st.button("Sair", use_container_width=True):
             del st.session_state["usuario"]
             st.rerun()
