@@ -36,12 +36,31 @@ st.set_page_config(
 
 db.init_db()
 
-# Usa o mesmo diretório gravável que o banco resolveu (ver database.py) —
-# assim fotos e banco sempre vivem no mesmo lugar, gravável de verdade.
-PASTA_FOTOS = os.path.join(db.DIRETORIO_DADOS, "fotos_usuarios")
+# Usa o mesmo diretório gravável que o banco resolveu (ver database.py).
+# getattr com fallback: se por algum motivo estiver rodando uma versão de
+# database.py sem esse atributo (ex.: deploy não atualizou o arquivo todo),
+# o app não quebra — recalcula um diretório gravável localmente.
+def _diretorio_dados_fallback():
+    preferido = os.path.dirname(os.path.abspath(__file__))
+    try:
+        teste = os.path.join(preferido, ".write_test_app")
+        with open(teste, "w") as f:
+            f.write("ok")
+        os.remove(teste)
+        return preferido
+    except Exception:
+        import tempfile
+        alternativo = os.path.join(tempfile.gettempdir(), "perfil_fisico_ia_dados")
+        os.makedirs(alternativo, exist_ok=True)
+        return alternativo
+
+
+DIRETORIO_DADOS = getattr(db, "DIRETORIO_DADOS", None) or _diretorio_dados_fallback()
+
+PASTA_FOTOS = os.path.join(DIRETORIO_DADOS, "fotos_usuarios")
 os.makedirs(PASTA_FOTOS, exist_ok=True)
 
-PASTA_FOTOS_PERFIL = os.path.join(db.DIRETORIO_DADOS, "fotos_perfil")
+PASTA_FOTOS_PERFIL = os.path.join(DIRETORIO_DADOS, "fotos_perfil")
 os.makedirs(PASTA_FOTOS_PERFIL, exist_ok=True)
 
 CAMPOS_MEDIDAS = [
@@ -412,7 +431,7 @@ def tela_login():
         unsafe_allow_html=True,
     )
 
-    if not db.ARMAZENAMENTO_PERMANENTE:
+    if not getattr(db, "ARMAZENAMENTO_PERMANENTE", True):
         st.warning(
             "⚠️ Este servidor não permite gravação permanente na pasta do app "
             "(comum em hospedagens gratuitas). Os dados estão sendo salvos em "
