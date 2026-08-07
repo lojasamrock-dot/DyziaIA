@@ -7,22 +7,54 @@ Tabelas:
   avaliacoes     -> uma linha por avaliação (medidas + índices calculados)
   metas          -> metas de medidas/peso por usuário
   fotos          -> caminho das fotos vinculadas a uma avaliação
+
+IMPORTANTE SOBRE HOSPEDAGEM:
+Em algumas hospedagens gratuitas (ex.: Streamlit Community Cloud), a pasta
+do próprio app é somente-leitura ou é recriada do zero a cada reinício/deploy.
+Por isso, na primeira importação deste módulo, testamos se dá para escrever
+ao lado do código-fonte; se não der, caímos automaticamente para uma pasta
+gravável no diretório temporário do sistema. Nesse segundo caso, os dados
+(contas, avaliações, fotos) NÃO são permanentes — eles somem quando o app
+reinicia. Para persistência de verdade, hospede em um servidor próprio
+(VPS/Docker) com um volume gravável, ou troque o SQLite por um banco externo.
 """
 
 import sqlite3
 import hashlib
 import os
+import tempfile
 from datetime import datetime
 from contextlib import contextmanager
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "perfil_fisico.db")
+
+def _resolver_diretorio_dados():
+    preferido = os.path.dirname(os.path.abspath(__file__))
+    try:
+        teste = os.path.join(preferido, ".write_test")
+        with open(teste, "w") as f:
+            f.write("ok")
+        os.remove(teste)
+        return preferido
+    except Exception:
+        alternativo = os.path.join(tempfile.gettempdir(), "perfil_fisico_ia_dados")
+        os.makedirs(alternativo, exist_ok=True)
+        return alternativo
+
+
+DIRETORIO_DADOS = _resolver_diretorio_dados()
+ARMAZENAMENTO_PERMANENTE = (DIRETORIO_DADOS == os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(DIRETORIO_DADOS, "perfil_fisico.db")
 
 
 @contextmanager
 def get_conn():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    try:
+        conn.execute("PRAGMA journal_mode = WAL")
+    except sqlite3.OperationalError:
+        pass  # alguns sistemas de arquivos de rede não suportam WAL; segue no modo padrão
     try:
         yield conn
         conn.commit()
@@ -101,10 +133,15 @@ def init_db():
             """
         )
         # Migração leve: adiciona a coluna foto_perfil se o banco já existia
-        # de uma versão anterior sem esse campo.
+        # de uma versão anterior sem esse campo. Protegido contra corrida entre
+        # múltiplas sessões do Streamlit inicializando ao mesmo tempo.
         colunas = [row["name"] for row in conn.execute("PRAGMA table_info(usuarios)")]
         if "foto_perfil" not in colunas:
-            conn.execute("ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT")
+            try:
+                conn.execute("ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT")
+            except sqlite3.OperationalError as e:
+                if "duplicate column" not in str(e).lower():
+                    raise
 
 
 # ---------- Usuários ----------

@@ -36,10 +36,12 @@ st.set_page_config(
 
 db.init_db()
 
-PASTA_FOTOS = os.path.join(os.path.dirname(__file__), "fotos_usuarios")
+# Usa o mesmo diretório gravável que o banco resolveu (ver database.py) —
+# assim fotos e banco sempre vivem no mesmo lugar, gravável de verdade.
+PASTA_FOTOS = os.path.join(db.DIRETORIO_DADOS, "fotos_usuarios")
 os.makedirs(PASTA_FOTOS, exist_ok=True)
 
-PASTA_FOTOS_PERFIL = os.path.join(os.path.dirname(__file__), "fotos_perfil")
+PASTA_FOTOS_PERFIL = os.path.join(db.DIRETORIO_DADOS, "fotos_perfil")
 os.makedirs(PASTA_FOTOS_PERFIL, exist_ok=True)
 
 CAMPOS_MEDIDAS = [
@@ -410,6 +412,15 @@ def tela_login():
         unsafe_allow_html=True,
     )
 
+    if not db.ARMAZENAMENTO_PERMANENTE:
+        st.warning(
+            "⚠️ Este servidor não permite gravação permanente na pasta do app "
+            "(comum em hospedagens gratuitas). Os dados estão sendo salvos em "
+            "modo temporário e podem ser perdidos quando o app reiniciar. "
+            "Para persistência permanente, hospede em um servidor próprio "
+            "(VPS/Docker) com um volume gravável."
+        )
+
     _, col_centro, _ = st.columns([1, 1.3, 1])
     with col_centro:
         aba_login, aba_cadastro = st.tabs(["Entrar", "Criar conta"])
@@ -497,9 +508,12 @@ def secao_nova_avaliacao(usuario):
         dados_pessoais = {"sexo": usuario["sexo"], "altura_cm": usuario["altura_cm"],
                            "tempo_treino_meses": usuario["tempo_treino_meses"]}
         indices = calculos.calcular_todos_indices(dados_pessoais, valores)
-        avaliacao_id = db.salvar_avaliacao(usuario["id"], valores, indices)
-        st.session_state["ultima_avaliacao_id"] = avaliacao_id
-        st.success("Avaliação salva com sucesso! Veja os resultados na aba 'Dashboard'.")
+        try:
+            avaliacao_id = db.salvar_avaliacao(usuario["id"], valores, indices)
+            st.session_state["ultima_avaliacao_id"] = avaliacao_id
+            st.success("Avaliação salva com sucesso! Veja os resultados na aba 'Dashboard'.")
+        except Exception as e:
+            st.error(f"Não foi possível salvar a avaliação agora. Detalhe técnico: {e}")
 
 
 # ----------------------------------------------------------------------------
@@ -742,14 +756,17 @@ def secao_fotos(usuario):
         if not foto_antes and not foto_depois:
             st.warning("Envie ao menos uma foto.")
         else:
-            for arquivo, tipo in [(foto_antes, "antes"), (foto_depois, "depois")]:
-                if arquivo:
-                    nome_arquivo = f"{usuario['id']}_{avaliacao['id']}_{tipo}_{arquivo.name}"
-                    caminho = os.path.join(PASTA_FOTOS, nome_arquivo)
-                    with open(caminho, "wb") as f:
-                        f.write(arquivo.getbuffer())
-                    db.salvar_foto(avaliacao["id"], tipo, caminho)
-            st.success("Fotos salvas.")
+            try:
+                for arquivo, tipo in [(foto_antes, "antes"), (foto_depois, "depois")]:
+                    if arquivo:
+                        nome_arquivo = f"{usuario['id']}_{avaliacao['id']}_{tipo}_{arquivo.name}"
+                        caminho = os.path.join(PASTA_FOTOS, nome_arquivo)
+                        with open(caminho, "wb") as f:
+                            f.write(arquivo.getbuffer())
+                        db.salvar_foto(avaliacao["id"], tipo, caminho)
+                st.success("Fotos salvas.")
+            except Exception as e:
+                st.error(f"Não foi possível salvar as fotos agora. Detalhe técnico: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Comparação automática (heurística baseada nas medidas salvas, não em
@@ -937,14 +954,21 @@ def secao_dados_pessoais(usuario):
                     altura_cm=float(altura_cm), tempo_treino_meses=int(tempo_treino),
                     natural_hormonizado=natural, objetivo=objetivo,
                 )
-                if foto_perfil_bytes:
-                    campos_atualizados["foto_perfil"] = salvar_arquivo_foto_perfil(
-                        usuario["id"], foto_perfil_bytes
+                try:
+                    if foto_perfil_bytes:
+                        campos_atualizados["foto_perfil"] = salvar_arquivo_foto_perfil(
+                            usuario["id"], foto_perfil_bytes
+                        )
+                    db.atualizar_usuario(usuario["id"], **campos_atualizados)
+                    st.session_state["usuario"] = db.get_usuario(usuario["id"])
+                    st.success("Dados atualizados.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(
+                        "Não foi possível salvar as alterações agora. "
+                        "Se você acabou de trocar a foto, tente novamente — "
+                        f"detalhe técnico: {e}"
                     )
-                db.atualizar_usuario(usuario["id"], **campos_atualizados)
-                st.session_state["usuario"] = db.get_usuario(usuario["id"])
-                st.success("Dados atualizados.")
-                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
 
