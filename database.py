@@ -62,6 +62,23 @@ def get_conn():
         conn.close()
 
 
+def _garantir_coluna(conn, tabela, coluna, tipo_sql="TEXT"):
+    """
+    Auto-cura de esquema: garante que 'coluna' existe em 'tabela', criando-a
+    se necessário. Chamada tanto no init_db() quanto de forma defensiva nos
+    pontos que gravam dados — assim, mesmo que a migração do init_db() não
+    tenha rodado (deploy parcial, versão antiga em cache, etc.), a coluna é
+    criada na hora em que é realmente necessária, e a operação não falha.
+    """
+    colunas = [row["name"] for row in conn.execute(f"PRAGMA table_info({tabela})")]
+    if coluna not in colunas:
+        try:
+            conn.execute(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo_sql}")
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
+
+
 def init_db():
     with get_conn() as conn:
         conn.executescript(
@@ -132,16 +149,9 @@ def init_db():
             );
             """
         )
-        # Migração leve: adiciona a coluna foto_perfil se o banco já existia
-        # de uma versão anterior sem esse campo. Protegido contra corrida entre
-        # múltiplas sessões do Streamlit inicializando ao mesmo tempo.
-        colunas = [row["name"] for row in conn.execute("PRAGMA table_info(usuarios)")]
-        if "foto_perfil" not in colunas:
-            try:
-                conn.execute("ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT")
-            except sqlite3.OperationalError as e:
-                if "duplicate column" not in str(e).lower():
-                    raise
+        # Migração leve: garante colunas adicionadas em versões mais novas
+        # (ex.: foto_perfil), mesmo que o banco já existisse antes delas.
+        _garantir_coluna(conn, "usuarios", "foto_perfil", "TEXT")
 
 
 # ---------- Usuários ----------
@@ -153,6 +163,7 @@ def hash_senha(senha: str) -> str:
 def criar_usuario(username, senha, nome, idade, sexo, altura_cm,
                    tempo_treino_meses, natural_hormonizado, objetivo, foto_perfil=None):
     with get_conn() as conn:
+        _garantir_coluna(conn, "usuarios", "foto_perfil", "TEXT")
         cur = conn.execute(
             """INSERT INTO usuarios
                (username, senha_hash, nome, idade, sexo, altura_cm,
@@ -181,6 +192,11 @@ def atualizar_usuario(usuario_id, **campos):
     sets = ", ".join(f"{k} = ?" for k in campos)
     valores = list(campos.values()) + [usuario_id]
     with get_conn() as conn:
+        # Auto-cura: garante que toda coluna que estamos tentando gravar
+        # realmente existe na tabela antes do UPDATE (protege contra
+        # migrações que não rodaram por algum motivo).
+        for campo in campos:
+            _garantir_coluna(conn, "usuarios", campo, "TEXT")
         conn.execute(f"UPDATE usuarios SET {sets} WHERE id = ?", valores)
 
 
