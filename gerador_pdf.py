@@ -3,6 +3,7 @@ gerador_pdf.py
 Gera o Relatório Premium em PDF usando ReportLab.
 """
 
+import os
 from io import BytesIO
 from datetime import datetime
 
@@ -18,6 +19,38 @@ from reportlab.lib.enums import TA_CENTER
 AZUL = colors.HexColor("#0B1F3A")
 AZUL_CLARO = colors.HexColor("#1F6FEB")
 CINZA = colors.HexColor("#333333")
+
+
+def _foto_perfil_circular(caminho, tamanho_px=500):
+    """
+    Recorta a foto de perfil em um círculo (fundo transparente) para uso
+    no cabeçalho do relatório. Retorna BytesIO com um PNG, ou None se a
+    foto não existir / não puder ser processada.
+    """
+    if not caminho or not os.path.exists(caminho):
+        return None
+    try:
+        from PIL import Image as PILImage, ImageDraw, ImageOps
+    except ImportError:
+        return None
+
+    try:
+        img = PILImage.open(caminho).convert("RGBA")
+        img = ImageOps.fit(img, (tamanho_px, tamanho_px), PILImage.LANCZOS)
+
+        mascara = PILImage.new("L", (tamanho_px, tamanho_px), 0)
+        desenho = ImageDraw.Draw(mascara)
+        desenho.ellipse((0, 0, tamanho_px, tamanho_px), fill=255)
+
+        saida = PILImage.new("RGBA", (tamanho_px, tamanho_px))
+        saida.paste(img, (0, 0), mascara)
+
+        buffer = BytesIO()
+        saida.save(buffer, format="PNG")
+        buffer.seek(0)
+        return buffer
+    except Exception:
+        return None
 
 
 def _estilos():
@@ -102,7 +135,15 @@ def gerar_relatorio_pdf(usuario: dict, medidas: dict, indices: dict,
     story = []
 
     # Capa
-    story.append(Spacer(1, 3 * cm))
+    story.append(Spacer(1, 2 * cm))
+
+    foto_circular = _foto_perfil_circular(usuario.get("foto_perfil"))
+    if foto_circular:
+        img_perfil = Image(foto_circular, width=3.6 * cm, height=3.6 * cm)
+        img_perfil.hAlign = "CENTER"
+        story.append(img_perfil)
+        story.append(Spacer(1, 0.6 * cm))
+
     story.append(Paragraph("Perfil Físico Corporal IA", estilos["TituloCapa"]))
     story.append(Paragraph("Relatório Premium de Avaliação Física", estilos["SubtituloCapa"]))
     story.append(Paragraph(

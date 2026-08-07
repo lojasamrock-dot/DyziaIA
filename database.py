@@ -45,6 +45,7 @@ def init_db():
                 tempo_treino_meses INTEGER,
                 natural_hormonizado TEXT, -- 'Natural' ou 'Hormonizado'
                 objetivo TEXT,
+                foto_perfil TEXT,         -- caminho da foto de perfil (opcional)
                 criado_em TEXT
             );
 
@@ -99,6 +100,11 @@ def init_db():
             );
             """
         )
+        # Migração leve: adiciona a coluna foto_perfil se o banco já existia
+        # de uma versão anterior sem esse campo.
+        colunas = [row["name"] for row in conn.execute("PRAGMA table_info(usuarios)")]
+        if "foto_perfil" not in colunas:
+            conn.execute("ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT")
 
 
 # ---------- Usuários ----------
@@ -108,17 +114,18 @@ def hash_senha(senha: str) -> str:
 
 
 def criar_usuario(username, senha, nome, idade, sexo, altura_cm,
-                   tempo_treino_meses, natural_hormonizado, objetivo):
+                   tempo_treino_meses, natural_hormonizado, objetivo, foto_perfil=None):
     with get_conn() as conn:
-        conn.execute(
+        cur = conn.execute(
             """INSERT INTO usuarios
                (username, senha_hash, nome, idade, sexo, altura_cm,
-                tempo_treino_meses, natural_hormonizado, objetivo, criado_em)
-               VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                tempo_treino_meses, natural_hormonizado, objetivo, foto_perfil, criado_em)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (username, hash_senha(senha), nome, idade, sexo, altura_cm,
-             tempo_treino_meses, natural_hormonizado, objetivo,
+             tempo_treino_meses, natural_hormonizado, objetivo, foto_perfil,
              datetime.now().isoformat()),
         )
+        return cur.lastrowid
 
 
 def autenticar(username, senha):

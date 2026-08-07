@@ -39,6 +39,9 @@ db.init_db()
 PASTA_FOTOS = os.path.join(os.path.dirname(__file__), "fotos_usuarios")
 os.makedirs(PASTA_FOTOS, exist_ok=True)
 
+PASTA_FOTOS_PERFIL = os.path.join(os.path.dirname(__file__), "fotos_perfil")
+os.makedirs(PASTA_FOTOS_PERFIL, exist_ok=True)
+
 CAMPOS_MEDIDAS = [
     ("peso_kg", "Peso (kg)"),
     ("pescoco_cm", "Pescoço (cm)"),
@@ -268,6 +271,29 @@ def injetar_css():
             overflow: hidden;
             border: 1px solid #1F2A44;
         }
+
+        /* ---------- Foto de perfil ---------- */
+        .foto-perfil-box {
+            background: rgba(255,255,255,0.02);
+            border: 1px dashed #2A3B5C;
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 6px;
+        }
+        .foto-placeholder {
+            width: 110px; height: 110px;
+            border-radius: 50%;
+            background: #131A2C;
+            border: 1px solid #1F2A44;
+            display: flex; align-items: center; justify-content: center;
+            color: #6B7A9E; font-size: 0.72rem; text-align: center;
+        }
+        .sidebar-avatar-foto {
+            width: 58px; height: 58px; border-radius: 50%;
+            object-fit: cover;
+            display: block; margin: 0 auto 10px auto;
+            border: 2px solid #1F6FEB;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -301,6 +327,65 @@ def card(titulo, valor, sufixo=""):
         f'<div class="valor">{valor}<span class="unidade">{sufixo}</span></div></div>',
         unsafe_allow_html=True,
     )
+
+
+def capturar_foto_perfil(key_prefix, foto_atual_path=None):
+    """
+    Widget reutilizável de foto de perfil: permite tirar foto pela câmera
+    do dispositivo ou enviar um arquivo da galeria/computador.
+    Retorna os bytes da nova foto escolhida (ou None se nada foi trocado).
+    Mostra também uma prévia da foto atual, se houver.
+    """
+    st.markdown('<div class="foto-perfil-box">', unsafe_allow_html=True)
+    st.markdown("**Foto de perfil**")
+
+    col_preview, col_widget = st.columns([1, 2])
+    with col_preview:
+        if foto_atual_path and os.path.exists(foto_atual_path):
+            st.image(foto_atual_path, width=110, caption="Atual")
+        else:
+            st.markdown(
+                '<div class="foto-placeholder">Sem foto</div>',
+                unsafe_allow_html=True,
+            )
+
+    with col_widget:
+        modo = st.radio(
+            "Origem da foto",
+            ["Não alterar", "📷 Tirar foto agora", "📁 Enviar arquivo"],
+            horizontal=True, key=f"{key_prefix}_modo",
+            label_visibility="collapsed",
+        )
+
+        foto_bytes = None
+        if modo == "📷 Tirar foto agora":
+            captura = st.camera_input("Use a câmera do celular ou computador", key=f"{key_prefix}_camera")
+            if captura:
+                foto_bytes = captura.getvalue()
+        elif modo == "📁 Enviar arquivo":
+            arquivo = st.file_uploader(
+                "Selecione uma imagem (jpg, jpeg ou png)",
+                type=["jpg", "jpeg", "png"], key=f"{key_prefix}_upload",
+            )
+            if arquivo:
+                foto_bytes = arquivo.getvalue()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    return foto_bytes
+
+
+def salvar_arquivo_foto_perfil(usuario_id, foto_bytes):
+    """Salva os bytes da foto em disco e devolve o caminho salvo."""
+    caminho = os.path.join(PASTA_FOTOS_PERFIL, f"perfil_{usuario_id}.jpg")
+    with open(caminho, "wb") as f:
+        f.write(foto_bytes)
+    return caminho
+
+
+def _foto_base64(caminho):
+    import base64
+    with open(caminho, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
 
 
 # ----------------------------------------------------------------------------
@@ -346,6 +431,9 @@ def tela_login():
 
         with aba_cadastro:
             st.markdown('<div class="panel">', unsafe_allow_html=True)
+
+            foto_cadastro_bytes = capturar_foto_perfil("cadastro")
+
             with st.form("form_cadastro"):
                 c1, c2 = st.columns(2)
                 with c1:
@@ -365,10 +453,13 @@ def tela_login():
                         st.error("Preencha usuário, senha e nome.")
                     else:
                         try:
-                            db.criar_usuario(
+                            novo_id = db.criar_usuario(
                                 novo_username, nova_senha, nome, int(idade), sexo,
                                 float(altura_cm), int(tempo_treino), natural, objetivo,
                             )
+                            if foto_cadastro_bytes:
+                                caminho_foto = salvar_arquivo_foto_perfil(novo_id, foto_cadastro_bytes)
+                                db.atualizar_usuario(novo_id, foto_perfil=caminho_foto)
                             st.success("Conta criada! Vá para a aba 'Entrar'.")
                         except Exception as e:
                             st.error(f"Não foi possível criar a conta: {e}")
@@ -822,6 +913,11 @@ def secao_dados_pessoais(usuario):
     _, col_centro, _ = st.columns([1, 1.4, 1])
     with col_centro:
         st.markdown('<div class="panel">', unsafe_allow_html=True)
+
+        foto_perfil_bytes = capturar_foto_perfil(
+            "perfil_edicao", foto_atual_path=usuario.get("foto_perfil")
+        )
+
         with st.form("form_dados_pessoais"):
             c1, c2 = st.columns(2)
             with c1:
@@ -836,11 +932,16 @@ def secao_dados_pessoais(usuario):
                 objetivo = st.text_input("Objetivo", value=usuario["objetivo"] or "")
             atualizar = st.form_submit_button("Salvar alterações", use_container_width=True)
             if atualizar:
-                db.atualizar_usuario(
-                    usuario["id"], nome=nome, idade=int(idade), sexo=sexo,
+                campos_atualizados = dict(
+                    nome=nome, idade=int(idade), sexo=sexo,
                     altura_cm=float(altura_cm), tempo_treino_meses=int(tempo_treino),
                     natural_hormonizado=natural, objetivo=objetivo,
                 )
+                if foto_perfil_bytes:
+                    campos_atualizados["foto_perfil"] = salvar_arquivo_foto_perfil(
+                        usuario["id"], foto_perfil_bytes
+                    )
+                db.atualizar_usuario(usuario["id"], **campos_atualizados)
                 st.session_state["usuario"] = db.get_usuario(usuario["id"])
                 st.success("Dados atualizados.")
                 st.rerun()
@@ -856,11 +957,17 @@ def app_principal():
     injetar_css()
 
     inicial = (usuario["nome"] or "?").strip()[0].upper()
+    foto_path = usuario.get("foto_perfil")
+    if foto_path and os.path.exists(foto_path):
+        avatar_html = f'<img class="sidebar-avatar-foto" src="data:image/jpeg;base64,{_foto_base64(foto_path)}" />'
+    else:
+        avatar_html = f'<div class="sidebar-avatar">{inicial}</div>'
+
     with st.sidebar:
         st.markdown(
             f"""
             <div class="sidebar-card">
-                <div class="sidebar-avatar">{inicial}</div>
+                {avatar_html}
                 <div class="sidebar-name">{usuario['nome']}</div>
                 <div class="sidebar-user">@{usuario['username']}</div>
             </div>
